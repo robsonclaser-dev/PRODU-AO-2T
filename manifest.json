@@ -1,0 +1,14 @@
+{
+  "name": "2T Produção Industrial",
+  "short_name": "2T Produção",
+  "description": "Rastreamento de peças e fluxo de produção TBM/2T Soluções",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#f59e0b",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
