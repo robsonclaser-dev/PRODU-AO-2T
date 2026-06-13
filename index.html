@@ -7,6 +7,964 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f59e0b">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f0f;--bg2:#1a1a1a;--bg3:#242424;--bg4:#2e2e2e;--amber:#f59e0b;--text:#e5e5e5;--text-dim:#888;--border:#333;--red:#ef4444;--green:#22c55e;--blue:#3b82f6;--purple:#a855f7;--radius:8px;--shadow:0 4px 24px rgba(0,0,0,.5)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:40px;width:340px;box-shadow:var(--shadow)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo h1{font-size:22px;font-weight:700;color:var(--amber);letter-spacing:2px}
+.login-logo p{font-size:12px;color:var(--text-dim);margin-top:4px}
+.login-box input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius);font-family:inherit;font-size:14px;margin-bottom:12px;transition:border-color .2s}
+.login-box input:focus{outline:none;border-color:var(--amber)}
+.login-box button{width:100%;background:var(--amber);color:#000;font-weight:700;font-size:15px;padding:11px;border:none;border-radius:var(--radius);cursor:pointer;font-family:inherit}
+.login-err{color:var(--red);font-size:12px;text-align:center;margin-top:8px;display:none}
+.login-users{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
+.login-users p{font-size:11px;color:var(--text-dim);margin-bottom:8px}
+.user-chip{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--text-dim);margin:2px;cursor:pointer}
+.user-chip:hover{border-color:var(--amber);color:var(--amber)}
+
+#topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;z-index:100}
+.topbar-logo{font-weight:700;font-size:16px;color:var(--amber);letter-spacing:1px;white-space:nowrap}
+.topbar-search{flex:1;max-width:280px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;padding:0 10px;gap:8px}
+.topbar-search input{background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;width:100%;outline:none}
+.topbar-search input::placeholder{color:var(--text-dim)}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:var(--radius);font-family:inherit;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.primary{background:var(--amber);color:#000;border-color:var(--amber);font-weight:700}
+.btn.primary:hover{opacity:.85}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:var(--red);color:#fff}
+.btn.sm{padding:4px 10px;font-size:11px}
+.user-badge{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--amber);white-space:nowrap}
+#filter-proj{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:6px 10px;font-family:inherit;font-size:13px;cursor:pointer;outline:none}
+
+#tabs{position:fixed;top:56px;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;z-index:99;overflow-x:auto;scrollbar-width:none}
+#tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 18px;font-size:13px;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:6px;font-weight:500}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+.badge{background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700}
+.badge.red{background:var(--red);color:#fff}
+
+#main{margin-top:100px;padding:16px}
+
+/* KANBAN */
+#kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:20px;align-items:flex-start}
+#kanban::-webkit-scrollbar{height:6px}
+#kanban::-webkit-scrollbar-track{background:var(--bg2)}
+#kanban::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.kanban-col{min-width:230px;width:230px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column}
+.col-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.col-count{margin-left:auto;background:var(--bg3);border-radius:10px;padding:1px 8px;font-size:11px;color:var(--text-dim)}
+.col-qtd{font-size:10px;color:var(--amber);margin-left:4px;font-family:'IBM Plex Mono',monospace}
+.col-body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:80px}
+.col-body.drag-over{background:rgba(245,158,11,.07);border-radius:8px}
+
+/* CARD LOTE (filho) */
+.lote-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;cursor:grab;transition:all .2s;position:relative;user-select:none}
+.lote-card:hover{border-color:var(--amber);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.lote-card.dragging{opacity:.4;cursor:grabbing}
+.lote-card.finalizado-card{border-color:var(--green);opacity:.7}
+
+/* linha superior do card: código + badge qtd */
+.lc-top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.lc-codigo{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--amber)}
+.lc-qtd-badge{background:var(--amber);color:#000;border-radius:6px;padding:1px 7px;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.lc-obs{font-size:11px;color:var(--purple);font-weight:600}
+.lc-projeto{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px}
+.lc-material{font-size:11px;color:var(--text);margin-top:4px}
+.lc-local{font-size:10px;color:var(--purple);margin-top:3px}
+.lc-resp{font-size:10px;color:var(--blue);margin-top:2px}
+.lc-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.tag{background:var(--bg4);border-radius:4px;padding:2px 6px;font-size:10px;color:var(--text-dim)}
+.tag.atrasado{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.prio-dot{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%}
+.prio-alta{background:var(--red);box-shadow:0 0 5px var(--red)}
+.prio-media{background:var(--amber)}
+.prio-baixa{background:var(--green)}
+.lc-actions{display:flex;gap:4px;margin-top:8px}
+.lc-btn{flex:1;background:var(--bg4);border:1px solid var(--border);color:var(--text-dim);border-radius:5px;padding:4px 5px;font-size:10px;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center}
+.lc-btn:hover{border-color:var(--amber);color:var(--amber)}
+.lc-btn.adv{border-color:var(--green);color:var(--green)}
+.lc-btn.adv:hover{background:var(--green);color:#000}
+
+/* GRUPO de lotes do mesmo código dentro de uma coluna */
+.grupo-header{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;padding:2px 4px;margin-top:4px;border-left:2px solid var(--border)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:620px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow)}
+.modal-header{padding:18px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1}
+.modal-header h2{font-size:16px;font-weight:700;color:var(--amber)}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--red)}
+.modal-body{padding:20px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{margin-bottom:14px}
+.form-group label{font-size:11px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:var(--radius);font-family:inherit;font-size:13px;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--amber)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-group select option{background:var(--bg3)}
+.prio-selector{display:flex;gap:8px}
+.prio-btn{flex:1;padding:8px;border-radius:6px;border:2px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;text-align:center;background:var(--bg3);color:var(--text-dim);font-family:inherit;transition:all .2s}
+.prio-btn.selected-alta{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.1)}
+.prio-btn.selected-media{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.1)}
+.prio-btn.selected-baixa{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.1)}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.sec-title{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* LOTES EDITOR */
+.lote-editor{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px}
+.lote-row{display:grid;grid-template-columns:1fr 70px 110px 28px;gap:8px;align-items:center;margin-bottom:8px}
+.lote-row input,.lote-row select{background:var(--bg4);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:5px;font-family:inherit;font-size:12px}
+.lote-row input:focus,.lote-row select:focus{outline:none;border-color:var(--amber)}
+.lote-hdr{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px}
+.lote-rm{background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1}
+.lote-add{background:none;border:1px dashed var(--border);color:var(--text-dim);border-radius:5px;padding:6px;font-size:12px;cursor:pointer;width:100%;font-family:inherit;transition:all .2s;margin-top:4px}
+.lote-add:hover{border-color:var(--amber);color:var(--amber)}
+.lote-resumo{font-size:11px;margin-top:8px;padding:6px 8px;background:var(--bg4);border-radius:5px}
+
+/* DETALHE PEÇA MÃE */
+.mae-overview{background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:14px}
+.mae-lote-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.mae-lote-row:last-child{border-bottom:none}
+.mae-etapa-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:var(--bg4);color:var(--text-dim);white-space:nowrap}
+.mae-etapa-badge.done{background:rgba(34,197,94,.15);color:var(--green)}
+.mae-etapa-badge.cur{background:rgba(245,158,11,.15);color:var(--amber)}
+.progress-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+
+/* MOVER MODAL */
+.mover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.mover-btn{padding:8px 4px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:inherit;font-size:10px;cursor:pointer;transition:all .2s;text-align:center}
+.mover-btn:hover{border-color:var(--amber);color:var(--amber)}
+.mover-btn.cur{border-color:var(--amber);color:#000;background:var(--amber);font-weight:700}
+
+/* HIST */
+.hist-list{display:flex;flex-direction:column}
+.hist-item{padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:8px;font-size:11px}
+.hist-item:last-child{border-bottom:none}
+.hist-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);margin-top:4px;flex-shrink:0}
+.hist-time{color:var(--text-dim);font-size:10px;white-space:nowrap}
+.hist-txt{flex:1;color:var(--text)}
+.hist-user{color:var(--blue)}
+
+/* REL */
+.rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.rel-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.rel-num{font-size:28px;font-weight:700;color:var(--amber);font-family:'IBM Plex Mono',monospace}
+.rel-label{font-size:10px;color:var(--text-dim);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.rel-table{width:100%;border-collapse:collapse;font-size:12px}
+.rel-table th{background:var(--bg3);color:var(--text-dim);padding:8px 10px;text-align:left;font-weight:600;font-size:10px;text-transform:uppercase}
+.rel-table td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.rel-table tr:hover td{background:rgba(245,158,11,.04)}
+
+#painel-atrasados{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px;margin-bottom:16px}
+#painel-atrasados h3{color:var(--red);font-size:13px;margin-bottom:10px}
+.at-item{display:flex;align-items:center;gap:10px;padding:7px;background:rgba(239,68,68,.05);border-radius:6px;margin-bottom:5px;font-size:11px;border:1px solid rgba(239,68,68,.2);flex-wrap:wrap}
+
+#foto-modal{display:none}
+#toast{position:fixed;bottom:24px;right:24px;z-index:9000;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;font-size:13px;box-shadow:var(--shadow);transform:translateY(60px);opacity:0;transition:all .3s;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-left:3px solid var(--green)}
+#toast.err{border-left:3px solid var(--red)}
+.empty{text-align:center;padding:20px 10px;color:var(--text-dim);font-size:12px}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media(max-width:600px){
+  #topbar{flex-wrap:wrap;height:auto;padding:10px 12px;gap:8px}
+  .topbar-search{max-width:100%;flex:1 1 100%}
+  #main{margin-top:130px;padding:10px}
+  .kanban-col{min-width:195px;width:195px}
+  .form-row{grid-template-columns:1fr}
+  .lote-row{grid-template-columns:1fr 60px 90px 24px}
+  .mover-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><h1>⚙ 2T PRODUÇÃO</h1><p>Sistema de Rastreamento Industrial</p></div>
+    <input type="text" id="login-user" placeholder="Usuário" autocomplete="off">
+    <input type="password" id="login-pass" placeholder="Senha">
+    <button onclick="doLogin()">ENTRAR</button>
+    <div class="login-err" id="login-err">Usuário ou senha incorretos</div>
+    <div class="login-users">
+      <p>▸ Clique para preencher</p>
+      <span class="user-chip" onclick="quickLogin('admin','admin123')">admin</span>
+      <span class="user-chip" onclick="quickLogin('robson','2t2025')">robson</span>
+      <span class="user-chip" onclick="quickLogin('operador','op123')">operador</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div id="topbar" style="display:none">
+  <div class="topbar-logo">⚙ 2T</div>
+  <div class="topbar-search">🔍<input type="text" id="search-input" placeholder="Buscar código, projeto..." oninput="renderKanban()"></div>
+  <select id="filter-proj" onchange="renderKanban()"><option value="">Todos os projetos</option></select>
+  <div class="topbar-actions">
+    <button class="btn primary" onclick="abrirModalNova()">+ NOVA PEÇA</button>
+    <button class="btn" onclick="mostrarTab('relatorio')">📊 Relatório</button>
+    <div class="user-badge" id="user-label">—</div>
+    <button class="btn danger" onclick="logout()">✕</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div id="tabs" style="display:none">
+  <div class="tab active" data-tab="kanban" onclick="mostrarTab('kanban')">📋 Kanban <span class="badge" id="badge-total">0</span></div>
+  <div class="tab" data-tab="atrasados" onclick="mostrarTab('atrasados')">⚠️ Atrasados <span class="badge red" id="badge-atrasados">0</span></div>
+  <div class="tab" data-tab="relatorio" onclick="mostrarTab('relatorio')">📊 Relatório</div>
+</div>
+
+<!-- MAIN -->
+<div id="main" style="display:none">
+  <div id="kanban-view">
+    <div id="painel-atrasados" style="display:none">
+      <h3>🔴 Peças Atrasadas <span id="at-count"></span></h3>
+      <div id="at-list"></div>
+    </div>
+    <div id="kanban"></div>
+  </div>
+  <div id="atrasados-view" style="display:none">
+    <h2 style="color:var(--red);margin-bottom:16px;font-size:16px">⚠️ Painel de Atrasados</h2>
+    <div id="atrasados-full"></div>
+  </div>
+  <div id="rel-view" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:8px">
+      <button class="btn" onclick="exportarCSV()">⬇ CSV</button>
+      <button class="btn primary" onclick="window.print()">🖨 Imprimir</button>
+    </div>
+    <div class="rel-grid" id="rel-stats"></div>
+    <h3 style="margin-bottom:12px;font-size:13px;color:var(--text-dim)">LOTES EM ANDAMENTO</h3>
+    <table class="rel-table">
+      <thead><tr><th>Código</th><th>Lote/Obs</th><th>Projeto</th><th>Qtd</th><th>Etapa</th><th>Localização</th><th>Responsável</th><th>Dias</th></tr></thead>
+      <tbody id="rel-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL NOVA/EDITAR PEÇA -->
+<div class="modal-overlay" id="modal-peca" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-titulo">NOVA PEÇA</h2>
+      <button class="modal-close" onclick="fecharModal('modal-peca')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Código da Peça *</label><input id="f-codigo" placeholder="ex: GC-15" class="mono"></div>
+        <div class="form-group"><label>Projeto *</label><input id="f-projeto" placeholder="ex: RON02, DEDINI"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Material</label><input id="f-material" placeholder="ex: A-36, Inox 304"></div>
+        <div class="form-group"><label>Medida</label><input id="f-medida" placeholder="ex: 142x1331x4438mm"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Qtd Total</label><input id="f-qtd" type="number" min="1" value="1"></div>
+        <div class="form-group"><label>Responsável</label>
+          <select id="f-resp">
+            <option value="">— Nenhum —</option>
+            <option>Robson</option><option>Caldeireiro A</option><option>Caldeireiro B</option>
+            <option>Jatista</option><option>Pintor</option><option>Montador</option><option>Operador 1</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Data Entrada</label><input id="f-data" type="date"></div>
+        <div class="form-group"><label>SLA (dias)</label><input id="f-sla" type="number" min="1" placeholder="ex: 5"></div>
+      </div>
+      <div class="form-group"><label>Prioridade</label>
+        <div class="prio-selector">
+          <button class="prio-btn" id="pb-alta" onclick="selPrio('alta')">🔴 ALTA</button>
+          <button class="prio-btn" id="pb-media" onclick="selPrio('media')">🟡 MÉDIA</button>
+          <button class="prio-btn" id="pb-baixa" onclick="selPrio('baixa')">🟢 OK</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Observação Geral</label><textarea id="f-obs" placeholder="Notas gerais sobre a peça..."></textarea></div>
+      <div class="form-group">
+        <label>Foto / Desenho Técnico (JPG, PNG ou PDF)</label>
+        <input type="file" id="f-foto" accept="image/*,application/pdf" onchange="previewFoto(this)">
+        <img id="f-foto-prev" style="display:none;width:100%;border-radius:6px;margin-top:8px;max-height:100px;object-fit:cover">
+        <div id="f-pdf-prev" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:8px;font-size:12px;color:var(--amber)">📄 <span id="f-pdf-nome"></span></div>
+      </div>
+
+      <div class="sec-title">📦 LOTES — DISTRIBUIÇÃO POR SETOR</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Cada lote vira um card independente no setor correto. Ex: GC-15 → Lote "4D" na Caldeiraria + Lote "4E" na Pintura.</div>
+      <div class="lote-editor">
+        <div class="lote-row" style="margin-bottom:6px">
+          <span class="lote-hdr">Setor Inicial</span>
+          <span class="lote-hdr">Qtd</span>
+          <span class="lote-hdr">Obs (D/E/info)</span>
+          <span></span>
+        </div>
+        <div id="lote-rows"></div>
+        <button class="lote-add" onclick="addLoteRow()">+ Adicionar lote</button>
+        <div class="lote-resumo" id="lote-resumo"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-peca')">Cancelar</button>
+      <button class="btn primary" onclick="salvarPeca()">SALVAR PEÇA</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE PEÇA MÃE -->
+<div class="modal-overlay" id="modal-mae" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="mae-titulo">—</h2>
+      <button class="modal-close" onclick="fecharModal('modal-mae')">✕</button>
+    </div>
+    <div class="modal-body" id="mae-body"></div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE LOTE -->
+<div class="modal-overlay" id="modal-lote" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2 id="lote-titulo">—</h2>
+      <button class="modal-close" onclick="fecharModal('modal-lote')">✕</button>
+    </div>
+    <div class="modal-body" id="lote-body"></div>
+  </div>
+</div>
+
+<!-- FOTO MODAL -->
+<div id="foto-modal" style="display:none">
+  <div class="modal-overlay" onclick="fecharFotoModal()" style="flex-direction:column;gap:12px">
+    <img id="foto-full" src="" style="max-width:90vw;max-height:85vh;border-radius:10px">
+    <button class="btn" onclick="fecharFotoModal()">Fechar</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// MODELO DE DADOS
+// ═══════════════════════════════════════
+// PEÇA MÃE: { id, codigo, projeto, material, medida, qtd, responsavel, sla, dataEntrada, obs, foto, prioridade, historico[] }
+// LOTE (filho): { id, maeId, obs, qtd, etapa, local, historico[] }
+// O kanban exibe LOTES. Cada lote é um card.
+// ═══════════════════════════════════════
+
+const USERS={admin:{senha:'admin123',nome:'Administrador'},robson:{senha:'2t2025',nome:'Robson'},operador:{senha:'op123',nome:'Operador'}};
+let currentUser=null;
+
+const ETAPAS=[
+  {id:'recebido',   label:'📥 Recebido',   cor:'#334155'},
+  {id:'caldeiraria',label:'🔩 Caldeiraria',cor:'#1e3a5f'},
+  {id:'montagem',   label:'🔧 Montagem',   cor:'#1e1b4b'},
+  {id:'jateamento', label:'🪨 Jateamento', cor:'#3b2a1a'},
+  {id:'pintura',    label:'🎨 Pintura',    cor:'#1a2e1a'},
+  {id:'expedicao',  label:'🚚 Expedição',  cor:'#2d1b4e'},
+  {id:'finalizado', label:'✅ Finalizado', cor:'#14532d'}
+];
+
+// ═══ DB ═══
+let db;
+function initDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('2TProd',4);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('pecas'))d.createObjectStore('pecas',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('lotes'))d.createObjectStore('lotes',{keyPath:'id'});
+    };
+    req.onsuccess=e=>{db=e.target.result;res()};
+    req.onerror=()=>rej(req.error);
+  });
+}
+const dbAll=store=>new Promise((r,j)=>{const t=db.transaction(store,'readonly'),q=t.objectStore(store).getAll();q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)});
+const dbPut=(store,obj)=>new Promise((r,j)=>{const t=db.transaction(store,'readwrite'),q=t.objectStore(store).put(obj);q.onsuccess=()=>r();q.onerror=()=>j(q.error)});
+const dbDel=(store,id)=>new Promise((r,j)=>{const t=db.transaction(store,'readwrite'),q=t.objectStore(store).delete(id);q.onsuccess=()=>r();q.onerror=()=>j(q.error)});
+
+// ═══ LOGIN ═══
+function doLogin(){
+  const u=document.getElementById('login-user').value.trim().toLowerCase();
+  const p=document.getElementById('login-pass').value;
+  if(USERS[u]&&USERS[u].senha===p){
+    currentUser={...USERS[u],login:u};
+    document.getElementById('login-screen').style.display='none';
+    ['topbar','tabs','main'].forEach(id=>document.getElementById(id).style.display=id==='main'?'block':'flex');
+    document.getElementById('user-label').textContent='👤 '+currentUser.nome;
+    mostrarTab('kanban');
+  }else{
+    document.getElementById('login-err').style.display='block';
+    setTimeout(()=>document.getElementById('login-err').style.display='none',2500);
+  }
+}
+function quickLogin(u,p){document.getElementById('login-user').value=u;document.getElementById('login-pass').value=p}
+function logout(){
+  currentUser=null;
+  document.getElementById('login-screen').style.display='flex';
+  ['topbar','tabs'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('main').style.display='none';
+}
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+// ═══ TABS ═══
+function mostrarTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const el=document.querySelector(`.tab[data-tab="${tab}"]`);if(el)el.classList.add('active');
+  document.getElementById('kanban-view').style.display=tab==='kanban'?'block':'none';
+  document.getElementById('atrasados-view').style.display=tab==='atrasados'?'block':'none';
+  document.getElementById('rel-view').style.display=tab==='relatorio'?'block':'none';
+  if(tab==='kanban')renderKanban();
+  if(tab==='atrasados')renderAtrasados();
+  if(tab==='relatorio')renderRelatorio();
+}
+
+// ═══ KANBAN ═══
+async function renderKanban(){
+  const [pecas,lotes]=await Promise.all([dbAll('pecas'),dbAll('lotes')]);
+  const search=document.getElementById('search-input').value.toLowerCase();
+  const proj=document.getElementById('filter-proj').value;
+  atualizarProjFiltro(pecas);
+
+  // filtrar lotes
+  let lotesFilt=lotes;
+  if(search)lotesFilt=lotesFilt.filter(l=>{
+    const mae=pecas.find(p=>p.id===l.maeId)||{};
+    return (mae.codigo||'').toLowerCase().includes(search)||
+           (mae.projeto||'').toLowerCase().includes(search)||
+           (mae.material||'').toLowerCase().includes(search)||
+           (l.obs||'').toLowerCase().includes(search)||
+           (l.local||'').toLowerCase().includes(search);
+  });
+  if(proj)lotesFilt=lotesFilt.filter(l=>{const mae=pecas.find(p=>p.id===l.maeId)||{};return mae.projeto===proj});
+
+  // badges
+  const atrasados=lotes.filter(l=>{
+    const mae=pecas.find(p=>p.id===l.maeId)||{};
+    return l.etapa!=='finalizado'&&mae.sla&&mae.dataEntrada&&diasDesde(mae.dataEntrada)>mae.sla;
+  });
+  document.getElementById('badge-total').textContent=lotes.length;
+  document.getElementById('badge-atrasados').textContent=atrasados.length;
+
+  // painel atrasados topo
+  const atPanel=document.getElementById('painel-atrasados');
+  if(atrasados.length>0){
+    atPanel.style.display='block';
+    document.getElementById('at-count').textContent=`(${atrasados.length})`;
+    document.getElementById('at-list').innerHTML=atrasados.slice(0,4).map(l=>{
+      const mae=pecas.find(p=>p.id===l.maeId)||{};
+      return `<div class="at-item">
+        <span class="mono" style="color:var(--amber)">${mae.codigo||'?'}</span>
+        ${l.obs?`<span style="color:var(--purple)">${l.obs}</span>`:''}
+        <span style="color:var(--text-dim)">${mae.projeto||''}</span>
+        <span>${etapaLabel(l.etapa)}</span>
+        <span style="color:var(--red);margin-left:auto">${diasDesde(mae.dataEntrada)}d/SLA${mae.sla}d</span>
+        <button class="lc-btn" onclick="verDetalhe('${l.id}')">Ver</button>
+      </div>`;
+    }).join('');
+  }else{atPanel.style.display='none'}
+
+  // montar kanban
+  const kanban=document.getElementById('kanban');
+  kanban.innerHTML=ETAPAS.map(et=>{
+    const lotesCol=lotesFilt.filter(l=>l.etapa===et.id);
+    const qtdTotal=lotesCol.reduce((a,l)=>a+parseInt(l.qtd||1),0);
+    // agrupar por maeId para mostrar código
+    const grupos={};
+    lotesCol.forEach(l=>{
+      const mae=pecas.find(p=>p.id===l.maeId)||{codigo:'?',projeto:'?'};
+      if(!grupos[l.maeId])grupos[l.maeId]={mae,lotes:[]};
+      grupos[l.maeId].lotes.push(l);
+    });
+    const cardsHTML=Object.values(grupos).map(g=>
+      g.lotes.map(l=>loteCardHTML(l,g.mae,pecas)).join('')
+    ).join('');
+    return `
+    <div class="kanban-col" id="col-${et.id}" ondragover="onDragOver(event,'${et.id}')" ondrop="onDrop(event,'${et.id}')" ondragleave="onDragLeave(event)">
+      <div class="col-header" style="background:${et.cor}">
+        ${et.label}
+        <span class="col-count">${lotesCol.length}</span>
+        ${qtdTotal>0?`<span class="col-qtd">${qtdTotal}pç</span>`:''}
+      </div>
+      <div class="col-body" id="body-${et.id}">
+        ${lotesCol.length===0?'<div class="empty"><span>◦</span>Vazio</div>':cardsHTML}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loteCardHTML(l,mae,pecas){
+  const dias=diasDesde(mae.dataEntrada||'');
+  const atras=l.etapa!=='finalizado'&&mae.sla&&dias>mae.sla;
+  const proxEt=proximaEtapa(l.etapa);
+  // calcular progresso da peça mãe
+  return `
+  <div class="lote-card${l.etapa==='finalizado'?' finalizado-card':''}" id="lcard-${l.id}"
+    draggable="true" ondragstart="onDragStart(event,'${l.id}')" ondragend="onDragEnd(event)">
+    <div class="prio-dot prio-${mae.prioridade||'media'}"></div>
+    <div class="lc-top">
+      <span class="lc-codigo">${mae.codigo||'?'}</span>
+      <span class="lc-qtd-badge">${l.qtd}pç</span>
+      ${l.obs?`<span class="lc-obs">${l.obs}</span>`:''}
+    </div>
+    <div class="lc-projeto">${mae.projeto||''}</div>
+    ${mae.material?`<div class="lc-material">${mae.material}${mae.medida?' · '+mae.medida:''}</div>`:''}
+    ${l.local?`<div class="lc-local">📍 ${l.local}</div>`:''}
+    ${mae.responsavel?`<div class="lc-resp">👤 ${mae.responsavel}</div>`:''}
+    <div class="lc-tags">
+      ${atras?`<span class="tag atrasado">⚠ ${dias}d ATRASADO</span>`:`<span class="tag">${dias}d</span>`}
+      ${mae.sla?`<span class="tag">SLA:${mae.sla}d</span>`:''}
+    </div>
+    <div class="lc-actions">
+      <button class="lc-btn" onclick="verDetalhe('${l.id}')">Detalhes</button>
+      <button class="lc-btn" onclick="verMae('${mae.id}')">📦 Peça</button>
+      ${proxEt?`<button class="lc-btn adv" onclick="avancarLote('${l.id}')">▶ ${etapaLabelShort(proxEt)}</button>`:''}
+    </div>
+  </div>`;
+}
+
+// ═══ DRAG DROP ═══
+let dragId=null;
+function onDragStart(e,id){dragId=id;e.dataTransfer.effectAllowed='move';setTimeout(()=>{const el=document.getElementById('lcard-'+id);if(el)el.classList.add('dragging')},0)}
+function onDragEnd(){const el=document.getElementById('lcard-'+dragId);if(el)el.classList.remove('dragging')}
+function onDragOver(e,colId){e.preventDefault();document.querySelectorAll('.col-body').forEach(b=>b.classList.remove('drag-over'));document.getElementById('body-'+colId).classList.add('drag-over')}
+function onDragLeave(){document.querySelectorAll('.col-body').forEach(b=>b.classList.remove('drag-over'))}
+async function onDrop(e,colId){
+  e.preventDefault();document.querySelectorAll('.col-body').forEach(b=>b.classList.remove('drag-over'));
+  if(!dragId)return;
+  const lotes=await dbAll('lotes');
+  const l=lotes.find(x=>x.id===dragId);
+  if(!l||l.etapa===colId)return;
+  const ant=l.etapa;l.etapa=colId;
+  addHist(l,`Movido: ${etapaLabel(ant)} → ${etapaLabel(colId)}`);
+  await dbPut('lotes',l);
+  await checarFechamentoMae(l.maeId);
+  toast(`Lote → ${etapaLabel(colId)}`,'ok');renderKanban();dragId=null;
+}
+
+async function avancarLote(id){
+  const lotes=await dbAll('lotes');
+  const l=lotes.find(x=>x.id===id);if(!l)return;
+  const prox=proximaEtapa(l.etapa);if(!prox)return;
+  const ant=l.etapa;l.etapa=prox;
+  addHist(l,`Avançado: ${etapaLabel(ant)} → ${etapaLabel(prox)}`);
+  await dbPut('lotes',l);
+  await checarFechamentoMae(l.maeId);
+  toast(`Lote → ${etapaLabel(prox)}`,'ok');renderKanban();
+}
+
+// Verifica se todos os lotes da peça mãe estão finalizados
+async function checarFechamentoMae(maeId){
+  const lotes=await dbAll('lotes');
+  const filhos=lotes.filter(l=>l.maeId===maeId);
+  if(filhos.length>0&&filhos.every(l=>l.etapa==='finalizado')){
+    // registrar no historico da mãe
+    const pecas=await dbAll('pecas');
+    const mae=pecas.find(p=>p.id===maeId);
+    if(mae){addHist(mae,'✅ Todos os lotes finalizados — Peça concluída');await dbPut('pecas',mae);}
+    toast('🎉 Peça concluída! Todos os lotes finalizados.','ok');
+  }
+}
+
+// ═══ LOTES EDITOR ═══
+let loteRows=[];
+function addLoteRow(setor='recebido',qtd='',obs=''){
+  loteRows.push({uid:Date.now()+'r'+Math.random(),setor,qtd,obs});renderLoteRows();
+}
+function renderLoteRows(){
+  const cont=document.getElementById('lote-rows');
+  cont.innerHTML=loteRows.map((r,i)=>`
+    <div class="lote-row">
+      <select onchange="loteRows[${i}].setor=this.value;atualizarLoteResumo()">
+        ${ETAPAS.map(et=>`<option value="${et.id}"${r.setor===et.id?' selected':''}>${et.label}</option>`).join('')}
+      </select>
+      <input type="number" min="1" value="${r.qtd}" placeholder="Qtd" oninput="loteRows[${i}].qtd=this.value;atualizarLoteResumo()">
+      <input type="text" value="${r.obs}" placeholder="D / E / info" oninput="loteRows[${i}].obs=this.value">
+      <button class="lote-rm" onclick="loteRows.splice(${i},1);renderLoteRows()">✕</button>
+    </div>`).join('');
+  atualizarLoteResumo();
+}
+function atualizarLoteResumo(){
+  const total=parseInt(document.getElementById('f-qtd').value)||0;
+  const dist=loteRows.reduce((a,r)=>a+parseInt(r.qtd||0),0);
+  const ok=total===dist;
+  document.getElementById('lote-resumo').innerHTML=loteRows.length===0?'':`
+    <span style="color:${ok?'var(--green)':'var(--amber)'}">Total distribuído: ${dist} / ${total} pçs ${ok?'✅':'⚠️'}</span>
+    <br><span style="color:var(--text-dim);font-size:10px">${loteRows.filter(r=>r.setor&&r.qtd).map(r=>etapaLabelShort(r.setor)+':'+r.qtd+(r.obs?' '+r.obs:'')).join(' | ')}</span>`;
+}
+
+// ═══ MODAL NOVA/EDITAR ═══
+let editMaeId=null,prioDest='media';
+
+function abrirModalNova(){
+  editMaeId=null;prioDest='media';loteRows=[];
+  document.getElementById('modal-titulo').textContent='NOVA PEÇA';
+  ['codigo','projeto','material','medida','obs'].forEach(f=>document.getElementById('f-'+f).value='');
+  document.getElementById('f-qtd').value=1;
+  document.getElementById('f-resp').value='';
+  document.getElementById('f-sla').value='';
+  document.getElementById('f-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-foto').value='';
+  document.getElementById('f-foto-prev').style.display='none';
+  document.getElementById('f-pdf-prev').style.display='none';
+  addLoteRow('recebido','','');
+  selPrio('media');
+  document.getElementById('modal-peca').style.display='flex';
+  setTimeout(()=>document.getElementById('f-codigo').focus(),80);
+}
+
+async function abrirModalEditar(maeId){
+  const pecas=await dbAll('pecas');
+  const mae=pecas.find(p=>p.id===maeId);if(!mae)return;
+  editMaeId=maeId;prioDest=mae.prioridade||'media';
+  const lotes=await dbAll('lotes');
+  const filhos=lotes.filter(l=>l.maeId===maeId);
+  loteRows=filhos.map(l=>({uid:Date.now()+'r'+Math.random(),setor:l.etapa,qtd:l.qtd,obs:l.obs||'',loteId:l.id}));
+  document.getElementById('modal-titulo').textContent='EDITAR PEÇA';
+  document.getElementById('f-codigo').value=mae.codigo;
+  document.getElementById('f-projeto').value=mae.projeto;
+  document.getElementById('f-material').value=mae.material||'';
+  document.getElementById('f-medida').value=mae.medida||'';
+  document.getElementById('f-qtd').value=mae.qtd||1;
+  document.getElementById('f-resp').value=mae.responsavel||'';
+  document.getElementById('f-sla').value=mae.sla||'';
+  document.getElementById('f-data').value=mae.dataEntrada||'';
+  document.getElementById('f-obs').value=mae.obs||'';
+  selPrio(prioDest);renderLoteRows();
+  if(mae.foto){
+    if(mae.foto.startsWith('data:application/pdf')){
+      document.getElementById('f-foto-prev').style.display='none';
+      const pd=document.getElementById('f-pdf-prev');pd.style.display='block';
+      pd.dataset.b64=mae.foto;document.getElementById('f-pdf-nome').textContent='PDF carregado';
+    }else{const prev=document.getElementById('f-foto-prev');prev.src=mae.foto;prev.style.display='block';}
+  }else{document.getElementById('f-foto-prev').style.display='none';document.getElementById('f-pdf-prev').style.display='none';}
+  fecharModal('modal-mae');
+  document.getElementById('modal-peca').style.display='flex';
+}
+
+function selPrio(p){prioDest=p;['alta','media','baixa'].forEach(x=>{const b=document.getElementById('pb-'+x);b.className='prio-btn';if(x===p)b.classList.add('selected-'+x)})}
+
+function previewFoto(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    if(f.type==='application/pdf'){
+      document.getElementById('f-foto-prev').style.display='none';
+      const pd=document.getElementById('f-pdf-prev');
+      document.getElementById('f-pdf-nome').textContent=f.name;pd.style.display='block';pd.dataset.b64=e.target.result;
+    }else{
+      document.getElementById('f-pdf-prev').style.display='none';
+      const prev=document.getElementById('f-foto-prev');prev.src=e.target.result;prev.style.display='block';
+    }
+  };r.readAsDataURL(f);
+}
+
+async function salvarPeca(){
+  const codigo=document.getElementById('f-codigo').value.trim().toUpperCase();
+  const projeto=document.getElementById('f-projeto').value.trim().toUpperCase();
+  if(!codigo||!projeto){toast('Código e Projeto obrigatórios!','err');return}
+  const lotesFiltrados=loteRows.filter(r=>r.setor&&r.qtd&&parseInt(r.qtd)>0);
+  if(lotesFiltrados.length===0){toast('Adicione ao menos 1 lote!','err');return}
+
+  const prev=document.getElementById('f-foto-prev');
+  const pdfPrev=document.getElementById('f-pdf-prev');
+  const fotoBase64=prev.style.display!=='none'?prev.src:(pdfPrev&&pdfPrev.style.display!=='none'?pdfPrev.dataset.b64:null);
+
+  if(editMaeId){
+    // atualizar mãe
+    const pecas=await dbAll('pecas');
+    const mae=pecas.find(p=>p.id===editMaeId);if(!mae)return;
+    mae.codigo=codigo;mae.projeto=projeto;
+    mae.material=document.getElementById('f-material').value.trim();
+    mae.medida=document.getElementById('f-medida').value.trim();
+    mae.qtd=parseInt(document.getElementById('f-qtd').value)||1;
+    mae.responsavel=document.getElementById('f-resp').value;
+    mae.sla=parseInt(document.getElementById('f-sla').value)||null;
+    mae.dataEntrada=document.getElementById('f-data').value;
+    mae.obs=document.getElementById('f-obs').value.trim();
+    mae.prioridade=prioDest;
+    if(fotoBase64)mae.foto=fotoBase64;
+    addHist(mae,'Dados editados');
+    await dbPut('pecas',mae);
+    // atualizar lotes existentes e criar novos
+    const lotesDB=await dbAll('lotes');
+    const filhosAtuais=lotesDB.filter(l=>l.maeId===editMaeId);
+    // remover lotes que não existem mais na edição
+    const idsEditados=lotesFiltrados.filter(r=>r.loteId).map(r=>r.loteId);
+    for(const l of filhosAtuais){if(!idsEditados.includes(l.id))await dbDel('lotes',l.id)}
+    // atualizar/criar
+    for(const r of lotesFiltrados){
+      if(r.loteId){
+        const l=filhosAtuais.find(x=>x.id===r.loteId);
+        if(l){l.qtd=parseInt(r.qtd);l.obs=r.obs;addHist(l,'Editado');await dbPut('lotes',l);}
+      }else{
+        const novoLote={id:'l_'+Date.now()+'_'+Math.random(),maeId:editMaeId,qtd:parseInt(r.qtd),obs:r.obs,etapa:r.setor,local:'',historico:[]};
+        addHist(novoLote,'Lote criado via edição');await dbPut('lotes',novoLote);
+      }
+    }
+    toast('Peça atualizada!','ok');
+  }else{
+    // nova peça
+    const maeId='m_'+Date.now();
+    const mae={id:maeId,codigo,projeto,
+      material:document.getElementById('f-material').value.trim(),
+      medida:document.getElementById('f-medida').value.trim(),
+      qtd:parseInt(document.getElementById('f-qtd').value)||1,
+      responsavel:document.getElementById('f-resp').value,
+      sla:parseInt(document.getElementById('f-sla').value)||null,
+      dataEntrada:document.getElementById('f-data').value,
+      obs:document.getElementById('f-obs').value.trim(),
+      prioridade:prioDest,foto:fotoBase64,historico:[]
+    };
+    addHist(mae,'Peça cadastrada');
+    await dbPut('pecas',mae);
+    for(const r of lotesFiltrados){
+      const lote={id:'l_'+Date.now()+'_'+Math.random(),maeId,qtd:parseInt(r.qtd),obs:r.obs,etapa:r.setor,local:'',historico:[]};
+      addHist(lote,`Lote criado — ${etapaLabel(r.setor)}`);
+      await dbPut('lotes',lote);
+    }
+    toast('Peça cadastrada com '+lotesFiltrados.length+' lote(s)!','ok');
+  }
+  fecharModal('modal-peca');renderKanban();
+}
+
+// ═══ DETALHE LOTE ═══
+async function verDetalhe(loteId){
+  const [pecas,lotes]=await Promise.all([dbAll('pecas'),dbAll('lotes')]);
+  const l=lotes.find(x=>x.id===loteId);if(!l)return;
+  const mae=pecas.find(p=>p.id===l.maeId)||{};
+  const dias=diasDesde(mae.dataEntrada||'');
+  const atras=l.etapa!=='finalizado'&&mae.sla&&dias>mae.sla;
+  document.getElementById('lote-titulo').textContent=`${mae.codigo||'?'} ${l.obs?'· '+l.obs:''} · ${l.qtd}pç`;
+  const moverHTML=`<div class="mover-grid">${ETAPAS.map(et=>`<button class="mover-btn${et.id===l.etapa?' cur':''}" onclick="moverLote('${l.id}','${et.id}')">${et.label}</button>`).join('')}</div>`;
+  const histHTML=(l.historico||[]).slice().reverse().map(h=>`<div class="hist-item"><div class="hist-dot"></div><div><div class="hist-txt">${h.acao} <span class="hist-user">— ${h.user}</span></div><div class="hist-time">${h.data}</div></div></div>`).join('')||'<div style="color:var(--text-dim);font-size:11px">Sem histórico</div>';
+
+  document.getElementById('lote-body').innerHTML=`
+    <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><div style="font-size:10px;color:var(--text-dim)">CÓDIGO</div><div class="mono" style="color:var(--amber);font-size:15px">${mae.codigo||'?'}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">PROJETO</div><div style="font-size:13px">${mae.projeto||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">QTDE LOTE</div><div style="font-size:13px;color:var(--amber);font-weight:700">${l.qtd} pçs</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">IDENTIFICAÇÃO</div><div style="font-size:13px;color:var(--purple)">${l.obs||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">ETAPA</div><div style="font-size:13px">${etapaLabel(l.etapa)}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">DIAS/SLA</div><div style="font-size:13px;color:${atras?'var(--red)':'var(--green)'}">${dias}d${mae.sla?' / SLA '+mae.sla+'d':''}</div></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">LOCALIZAÇÃO FÍSICA</label>
+      <div style="display:flex;gap:6px">
+        <input id="det-local" value="${l.local||''}" placeholder="ex: 3º Lonado, Área Pintura..." style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:5px;font-family:inherit;font-size:12px">
+        <button class="btn sm primary" onclick="salvarLocal('${l.id}')">💾</button>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Mover para Etapa</div>
+    ${moverHTML}
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn" onclick="verMae('${mae.id}')">📦 Ver Peça Completa</button>
+      <button class="btn danger" onclick="excluirLote('${l.id}')">🗑 Excluir Lote</button>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Histórico</div>
+    <div class="hist-list">${histHTML}</div>`;
+  document.getElementById('modal-lote').style.display='flex';
+}
+
+async function salvarLocal(loteId){
+  const lotes=await dbAll('lotes');
+  const l=lotes.find(x=>x.id===loteId);if(!l)return;
+  const val=document.getElementById('det-local').value.trim();
+  l.local=val;addHist(l,`Localização: ${val||'removida'}`);
+  await dbPut('lotes',l);toast('Localização salva','ok');renderKanban();
+}
+
+async function moverLote(loteId,etapaId){
+  const lotes=await dbAll('lotes');
+  const l=lotes.find(x=>x.id===loteId);if(!l)return;
+  const ant=l.etapa;l.etapa=etapaId;
+  addHist(l,`Movido: ${etapaLabel(ant)} → ${etapaLabel(etapaId)}`);
+  await dbPut('lotes',l);
+  await checarFechamentoMae(l.maeId);
+  fecharModal('modal-lote');toast(`Lote → ${etapaLabel(etapaId)}`,'ok');renderKanban();
+}
+
+async function excluirLote(loteId){
+  if(!confirm('Excluir este lote?'))return;
+  await dbDel('lotes',loteId);fecharModal('modal-lote');toast('Lote excluído','ok');renderKanban();
+}
+
+// ═══ DETALHE PEÇA MÃE ═══
+async function verMae(maeId){
+  const [pecas,lotes]=await Promise.all([dbAll('pecas'),dbAll('lotes')]);
+  const mae=pecas.find(p=>p.id===maeId);if(!mae)return;
+  const filhos=lotes.filter(l=>l.maeId===maeId);
+  const finalizados=filhos.filter(l=>l.etapa==='finalizado').length;
+  const pct=filhos.length>0?Math.round((finalizados/filhos.length)*100):0;
+  document.getElementById('mae-titulo').textContent=mae.codigo+' · '+mae.projeto;
+
+  const fotoHTML=mae.foto?(mae.foto.startsWith('data:application/pdf')
+    ?`<button class="btn" style="width:100%;margin-bottom:14px" onclick="abrirPDF('${mae.id}')">📄 Abrir Desenho Técnico (PDF)</button>`
+    :`<img src="${mae.foto}" style="width:100%;border-radius:8px;margin-bottom:14px;cursor:pointer;max-height:160px;object-fit:cover" onclick="abrirFotoMae('${mae.id}')">`):'';
+
+  const lotesHTML=filhos.map(l=>`
+    <div class="mae-lote-row">
+      <span class="mono" style="color:var(--amber);font-size:12px">${l.qtd}pç</span>
+      ${l.obs?`<span style="color:var(--purple);font-size:11px;font-weight:700">${l.obs}</span>`:''}
+      <span class="mae-etapa-badge${l.etapa==='finalizado'?' done':''}">${etapaLabel(l.etapa)}</span>
+      ${l.local?`<span style="color:var(--purple);font-size:10px">📍${l.local}</span>`:''}
+      <button class="lc-btn" style="margin-left:auto" onclick="fecharModal('modal-mae');verDetalhe('${l.id}')">Ver</button>
+    </div>`).join('');
+
+  const histHTML=(mae.historico||[]).slice().reverse().slice(0,8).map(h=>`<div class="hist-item"><div class="hist-dot"></div><div><div class="hist-txt">${h.acao} <span class="hist-user">— ${h.user}</span></div><div class="hist-time">${h.data}</div></div></div>`).join('');
+
+  document.getElementById('mae-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div><div style="font-size:10px;color:var(--text-dim)">MATERIAL</div><div style="font-size:12px">${mae.material||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">MEDIDA</div><div style="font-size:12px">${mae.medida||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">QTD TOTAL</div><div style="font-size:13px;color:var(--amber);font-weight:700">${mae.qtd||1} pçs</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">RESPONSÁVEL</div><div style="font-size:12px;color:var(--blue)">${mae.responsavel||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">ENTRADA</div><div style="font-size:12px">${mae.dataEntrada||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">PROGRESSO</div><div style="font-size:12px;color:${pct===100?'var(--green)':'var(--amber)'}">✅ ${finalizados}/${filhos.length} lotes (${pct}%)</div></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    ${mae.obs?`<div style="background:var(--bg3);border-radius:6px;padding:10px;font-size:12px;margin:12px 0;color:var(--text-dim)">${mae.obs}</div>`:''}
+    ${fotoHTML}
+    <div class="sec-title" style="margin-top:12px">LOTES</div>
+    <div class="mae-overview">${lotesHTML||'<div style="color:var(--text-dim);font-size:12px">Sem lotes</div>'}</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn" onclick="abrirModalEditar('${mae.id}')">✏ Editar Peça</button>
+      <button class="btn danger" onclick="excluirMae('${mae.id}')">🗑 Excluir Tudo</button>
+    </div>
+    <div class="sec-title">HISTÓRICO</div>
+    <div class="hist-list">${histHTML}</div>`;
+  fecharModal('modal-lote');
+  document.getElementById('modal-mae').style.display='flex';
+}
+
+async function excluirMae(maeId){
+  if(!confirm('Excluir a peça e TODOS os lotes?'))return;
+  const lotes=await dbAll('lotes');
+  const filhos=lotes.filter(l=>l.maeId===maeId);
+  for(const l of filhos)await dbDel('lotes',l.id);
+  await dbDel('pecas',maeId);
+  fecharModal('modal-mae');toast('Peça e lotes excluídos','ok');renderKanban();
+}
+
+async function abrirFotoMae(maeId){
+  const pecas=await dbAll('pecas');const mae=pecas.find(p=>p.id===maeId);
+  if(!mae||!mae.foto)return;
+  document.getElementById('foto-full').src=mae.foto;
+  document.getElementById('foto-modal').style.display='block';
+}
+async function abrirPDF(maeId){
+  const pecas=await dbAll('pecas');const mae=pecas.find(p=>p.id===maeId);
+  if(!mae||!mae.foto)return;
+  const w=window.open();w.document.write('<iframe src="'+mae.foto+'" style="width:100%;height:100%;border:none;position:fixed;inset:0"></iframe>');
+}
+function fecharFotoModal(){document.getElementById('foto-modal').style.display='none'}
+
+// ═══ ATRASADOS ═══
+async function renderAtrasados(){
+  const [pecas,lotes]=await Promise.all([dbAll('pecas'),dbAll('lotes')]);
+  const atrasados=lotes.filter(l=>{const mae=pecas.find(p=>p.id===l.maeId)||{};return l.etapa!=='finalizado'&&mae.sla&&mae.dataEntrada&&diasDesde(mae.dataEntrada)>mae.sla});
+  const el=document.getElementById('atrasados-full');
+  if(atrasados.length===0){el.innerHTML='<div style="color:var(--green);padding:20px 0;font-size:14px">✅ Nenhuma peça atrasada!</div>';return}
+  el.innerHTML=atrasados.map(l=>{
+    const mae=pecas.find(p=>p.id===l.maeId)||{};
+    return `<div class="at-item" style="margin-bottom:8px;padding:12px">
+      <div><div class="mono" style="font-size:14px;color:var(--amber)">${mae.codigo||'?'}</div><div style="font-size:11px;color:var(--text-dim)">${mae.projeto||''} ${l.obs?'· '+l.obs:''}</div></div>
+      <div><div style="font-size:10px;color:var(--text-dim)">Etapa</div><div style="font-size:12px">${etapaLabel(l.etapa)}</div></div>
+      ${l.local?`<div><div style="font-size:10px;color:var(--text-dim)">Local</div><div style="font-size:12px;color:var(--purple)">📍${l.local}</div></div>`:''}
+      <div><div style="font-size:24px;font-weight:700;color:var(--red);font-family:monospace">${diasDesde(mae.dataEntrada)}</div><div style="font-size:10px;color:var(--text-dim)">dias/SLA${mae.sla}d</div></div>
+      <button class="btn" onclick="verDetalhe('${l.id}')">Ver</button>
+    </div>`;}).join('');
+}
+
+// ═══ RELATÓRIO ═══
+async function renderRelatorio(){
+  const [pecas,lotes]=await Promise.all([dbAll('pecas'),dbAll('lotes')]);
+  const total=lotes.length;
+  const fin=lotes.filter(l=>l.etapa==='finalizado').length;
+  const atras=lotes.filter(l=>{const mae=pecas.find(p=>p.id===l.maeId)||{};return l.etapa!=='finalizado'&&mae.sla&&mae.dataEntrada&&diasDesde(mae.dataEntrada)>mae.sla}).length;
+  document.getElementById('rel-stats').innerHTML=`
+    <div class="rel-card"><div class="rel-num">${pecas.length}</div><div class="rel-label">Peças</div></div>
+    <div class="rel-card"><div class="rel-num">${total}</div><div class="rel-label">Lotes</div></div>
+    <div class="rel-card"><div class="rel-num" style="color:var(--green)">${fin}</div><div class="rel-label">Finalizados</div></div>
+    <div class="rel-card"><div class="rel-num" style="color:var(--red)">${atras}</div><div class="rel-label">Atrasados</div></div>
+    ${[...new Set(pecas.map(p=>p.projeto))].map(pr=>{
+      const n=lotes.filter(l=>{const m=pecas.find(p=>p.id===l.maeId)||{};return m.projeto===pr}).length;
+      return `<div class="rel-card"><div class="rel-num" style="font-size:22px">${n}</div><div class="rel-label">${pr}</div></div>`;
+    }).join('')}`;
+  document.getElementById('rel-tbody').innerHTML=lotes.map(l=>{
+    const mae=pecas.find(p=>p.id===l.maeId)||{};
+    const atrasado=l.etapa!=='finalizado'&&mae.sla&&mae.dataEntrada&&diasDesde(mae.dataEntrada)>mae.sla;
+    return `<tr>
+      <td class="mono" style="color:var(--amber)">${mae.codigo||'?'}</td>
+      <td style="color:var(--purple)">${l.obs||'—'}</td>
+      <td>${mae.projeto||'—'}</td>
+      <td>${l.qtd}</td>
+      <td>${etapaLabel(l.etapa)}</td>
+      <td style="color:var(--purple)">${l.local||'—'}</td>
+      <td style="color:var(--blue)">${mae.responsavel||'—'}</td>
+      <td style="color:${atrasado?'var(--red)':'inherit'}">${diasDesde(mae.dataEntrada||'')}d${atrasado?' ⚠':''}</td>
+    </tr>`;}).join('');
+}
+
+async function exportarCSV(){
+  const [pecas,lotes]=await Promise.all([dbAll('pecas'),dbAll('lotes')]);
+  const header=['Código','Lote/Obs','Projeto','Material','Qtd Lote','Etapa','Localização','Responsável','Entrada','Dias','SLA'];
+  const rows=lotes.map(l=>{
+    const mae=pecas.find(p=>p.id===l.maeId)||{};
+    return [mae.codigo||'',l.obs||'',mae.projeto||'',mae.material||'',l.qtd,etapaLabel(l.etapa),l.local||'',mae.responsavel||'',mae.dataEntrada||'',diasDesde(mae.dataEntrada||''),mae.sla||''];
+  });
+  const csv=[header,...rows].map(r=>r.map(x=>`"${x}"`).join(',')).join('\n');
+  const b=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=`2T_Producao_${new Date().toISOString().split('T')[0]}.csv`;a.click();
+}
+
+// ═══ UTILS ═══
+function etapaLabel(id){return(ETAPAS.find(e=>e.id===id)||{}).label||id}
+function etapaLabelShort(id){const m={recebido:'Receb.',caldeiraria:'Cald.',montagem:'Mont.',jateamento:'Jato',pintura:'Pint.',expedicao:'Exped.',finalizado:'✅Final'};return m[id]||id}
+function proximaEtapa(id){const i=ETAPAS.findIndex(e=>e.id===id);return i>=0&&i<ETAPAS.length-1?ETAPAS[i+1].id:null}
+function diasDesde(data){if(!data)return 0;const d=new Date(data+'T00:00:00');const h=new Date();h.setHours(0,0,0,0);return Math.max(0,Math.floor((h-d)/86400000))}
+function addHist(obj,acao){if(!obj.historico)obj.historico=[];obj.historico.push({acao,user:currentUser?currentUser.nome:'Sistema',data:new Date().toLocaleString('pt-BR')})}
+function atualizarProjFiltro(pecas){
+  const sel=document.getElementById('filter-proj');const cur=sel.value;
+  const projs=[...new Set(pecas.map(p=>p.projeto))].sort();
+  sel.innerHTML='<option value="">Todos os projetos</option>'+projs.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(projs.includes(cur))sel.value=cur;
+}
+function fecharModal(id){document.getElementById(id).style.display='none'}
+
+let toastTimer;
+function toast(msg,tipo='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+tipo;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',2800)}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['modal-peca','modal-mae','modal-lote'].forEach(id=>{if(document.getElementById(id).style.display!=='none')fecharModal(id)})});
+['modal-peca','modal-mae','modal-lote'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)fecharModal(id)}));
+
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/PRODU-AO-2T/sw.js').catch(()=>{}));
+
+initDB().then(()=>console.log('2T DB v4 OK'));
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2T Produção Industrial</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f59e0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
