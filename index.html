@@ -951,7 +951,10 @@ function toast(msg,tipo='ok'){const t=document.getElementById('toast');t.textCon
 document.addEventListener('keydown',e=>{if(e.key==='Escape')['modal-peca','modal-mae','modal-lote'].forEach(id=>{if(document.getElementById(id).style.display!=='none')fecharModal(id)})});
 ['modal-peca','modal-mae','modal-lote'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)fecharModal(id)}));
 
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/PRODU-AO-2T/sw.js').catch(()=>{}));
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>r.unregister())});
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
 
 initDB().then(()=>console.log('2T DB v4 OK'));
 </script>
